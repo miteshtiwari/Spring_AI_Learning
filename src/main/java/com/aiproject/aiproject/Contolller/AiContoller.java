@@ -1,6 +1,7 @@
 package com.aiproject.aiproject.Contolller;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.DefaultChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,7 +22,7 @@ public class AiContoller {
     @GetMapping("/chat")
     private ResponseEntity<String> chat(@RequestParam(value = "q",required = true) String query){
 
-       String build = chatClient.prompt("hi").call().content();
+        DefaultChatClient.DefaultCallResponseSpec build = (DefaultChatClient.DefaultCallResponseSpec) chatClient.prompt("hi").call();
 
         return ResponseEntity.ok("this is ok"+build);
     }
