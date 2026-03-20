@@ -27,4 +27,12 @@ public class AiContoller {
         return ResponseEntity.ok("this is ok"+build);
     }
 
+    @GetMapping("/chat2")
+    private ResponseEntity<String> chat2(@RequestParam(value = "q",required = true) String query){
+
+        DefaultChatClient.DefaultCallResponseSpec build = (DefaultChatClient.DefaultCallResponseSpec) chatClient.prompt("hi").call();
+
+        return ResponseEntity.ok("this is ok"+build);
+    }
+
 }
