@@ -1,20 +1,26 @@
 package com.aiproject.aiproject.Contolller;
 
 import com.aiproject.aiproject.Entity.Tut;
+import com.aiproject.aiproject.Service.ChatService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
 @RestController
 public class AiContoller {
+
+    @Autowired
+    private ChatService chatService;
 
     private ChatClient OpenAiChatClient;
 
@@ -102,5 +108,12 @@ public class AiContoller {
 //        return build;
 //    }
 
+
+
+    @GetMapping("/stream-chat")
+    public ResponseEntity<Flux<String>> streamchat(@RequestParam("q") String query){
+
+        return ResponseEntity.ok(chatService.streamchat(query));
+    }
 
 }
