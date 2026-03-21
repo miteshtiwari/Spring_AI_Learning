@@ -12,9 +12,15 @@ public class ChatService {
     @Autowired
     private ChatClient OllamaChatClient;
 
-    public Flux<String> streamchat(String query){
+    public Flux<String> streamchat(String query) {
         return OllamaChatClient
                 .prompt()
+                .system("""
+                        You are a concise assistant.l̥
+                        - No examples unless asked
+                        - No extra explanation
+                        - No repetition
+                        """)
                 .user(query)
                 .stream()
                 .content();
