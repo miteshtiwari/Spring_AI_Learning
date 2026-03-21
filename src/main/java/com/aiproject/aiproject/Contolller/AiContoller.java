@@ -19,7 +19,7 @@ public class AiContoller {
         this.OpenAiChatClient = openAiChatClient;
         this.OllamaChatClient = ollamaChatClient;
     }
-
+// Controller for doing chat with LLM
     @GetMapping("/chat")
     private ResponseEntity<String> chat(@RequestParam(value = "q",required = true) String query){
 
