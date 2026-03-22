@@ -6,15 +6,22 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
+import java.lang.annotation.Documented;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 public class AiContoller {
@@ -22,14 +29,19 @@ public class AiContoller {
     @Autowired
     private ChatService chatService;
 
-    private ChatClient OpenAiChatClient;
+    @Autowired
+    private VectorStore vectorStore;
+
+//
+//    private ChatClient OpenAiChatClient;
 
     private ChatClient OllamaChatClient;
 
-    public AiContoller(@Qualifier("OpenAiChatClient") ChatClient openAiChatClient, @Qualifier("OllamaChatClient")ChatClient ollamaChatClient) {
-        this.OpenAiChatClient = openAiChatClient;
+    public AiContoller(@Qualifier("OllamaChatClient") ChatClient ollamaChatClient) {
         this.OllamaChatClient = ollamaChatClient;
     }
+
+
 // Controller for doing chat with LLM
 //    @GetMapping("/chat")
 //    private ResponseEntity<String> chat(@RequestParam(value = "q",required = true) String query){
@@ -46,35 +58,91 @@ public class AiContoller {
 //    }
 //
 
-        public String chattemplate(){
+    public String chattemplate() {
         // first step
         PromptTemplate strtemplate = PromptTemplate.builder().template("what is {techname} tell me example of {technology}").build();
 
         //render the template
 
         String renderedmsg = strtemplate.render(Map.of(
-                "techname","spring",
-                "technology","spring boot"
+                "techname", "spring",
+                "technology", "spring boot"
         ));
 
         Prompt prompt = new Prompt(renderedmsg);
 
-    //        var content = this.OllamaChatClient.prompt(prompt).call().content();
+        //        var content = this.OllamaChatClient.prompt(prompt).call().content();
         return renderedmsg;
     }
 
+
+    public String buildSystemPrompt(String contextdata) {
+
+        PromptTemplate template = PromptTemplate.builder()
+                .template("""
+                        You are a Coding Assistant.
+                        
+                        TASK:
+                        Answer the user's question using ONLY the DOCUMENTS provided.
+                        
+                        RULES:
+                        - Find the exact sentence in DOCUMENTS that answers the question.
+                        - If found, return that sentence.
+                        - Do NOT generate your own knowledge.
+                        - Keep the answer short and direct.
+                        
+                        If the answer is NOT present in DOCUMENTS, reply exactly:
+                        This Query is not in db
+                        
+                        OUTPUT FORMAT:
+                        Answer: <short answer>
+                        Source: <exact sentence from documents>
+                        
+                        IMPORTANT:
+                        - Do not explain anything.
+                        - Do not add extra text.
+                        - Only return the format above.
+                        
+                        DOCUMENTS:
+                        {documents}
+                        """)
+                .build();
+
+        return template.render(Map.of(
+                "documents", contextdata
+        ));
+    }
+
+    // implememted similarity search
+
     @GetMapping("/chat")
-    private ResponseEntity<String> chat3(@RequestParam(value = "q",required = true) String query){
-        var build =  OllamaChatClient
+    private ResponseEntity<String> chat3(@RequestParam(value = "q") String query) {
+
+        SearchRequest searchRequest = SearchRequest.builder()
+                .topK(4)
+                .similarityThreshold(0.6)
+                .query(query)
+                .build();
+
+        List<Document> documents = vectorStore.similaritySearch(searchRequest);
+
+        String contextdata = documents.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n---\n\n"));
+
+        System.out.println("context data " + contextdata);
+
+        String systemPrompt = buildSystemPrompt(contextdata);
+
+        var response = OllamaChatClient
                 .prompt()
-                .user(query)
+                .system(systemPrompt)   // ✅ context + rules
+                .user("Answer this question strictly from the documents: " + query)        // ✅ user question
                 .call()
                 .content();
 
-        return ResponseEntity.ok("Response from AI :-"+ build);
+        return ResponseEntity.ok("Response from AI :- " + response);
     }
-
-
 
 
 //    @GetMapping("/chat-class")
@@ -97,7 +165,8 @@ public class AiContoller {
 //        }
 //
 //        """;
-//// there is some issue with ollama itself sometime it gives response in entity format sometime not
+
+    /// / there is some issue with ollama itself sometime it gives response in entity format sometime not
 //        Tut build =  OllamaChatClient
 //                .prompt(prompt)
 //                .user(query)
@@ -107,13 +176,10 @@ public class AiContoller {
 //
 //        return build;
 //    }
-
-
-
     @GetMapping("/stream-chat")
-    public ResponseEntity<Flux<String>> streamchat(@RequestParam("q") String query){
+    public ResponseEntity<Flux<String>> streamchat(@RequestParam("q") String query, @RequestHeader("conversation-id") String convoid) {
 
-        return ResponseEntity.ok(chatService.streamchat(query));
+        return ResponseEntity.ok(chatService.streamchat(query, convoid));
     }
 
 }

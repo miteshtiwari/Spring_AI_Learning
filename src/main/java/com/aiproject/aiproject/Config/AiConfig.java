@@ -6,7 +6,8 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.ollama.OllamaChatModel;
-import org.springframework.ai.openai.OpenAiChatModel;
+//import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,9 +31,9 @@ public class AiConfig {
                 .build();
     }
 
-    @Bean(name = "OpenAiChatClient")
-    public ChatClient openAiChatClient(OpenAiChatModel chatModel) {
-        return ChatClient.builder(chatModel)
-                .build();
-    }
+//    @Bean(name = "OpenAiChatClient")
+//    public ChatClient openAiChatClient(OpenAiChatModel chatModel) {
+//        return ChatClient.builder(chatModel)
+//                .build();
+//    }
 }
