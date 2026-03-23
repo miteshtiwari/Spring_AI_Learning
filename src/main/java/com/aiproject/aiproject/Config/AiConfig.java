@@ -7,7 +7,6 @@ import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.ollama.OllamaChatModel;
 //import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,7 +26,7 @@ public class AiConfig {
         MessageChatMemoryAdvisor messageChatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         return ChatClient
                 .builder(chatModel)
-                .defaultAdvisors(new SimpleLoggerAdvisor(),messageChatMemoryAdvisor)
+                .defaultAdvisors(new SimpleLoggerAdvisor())
                 .build();
     }
 

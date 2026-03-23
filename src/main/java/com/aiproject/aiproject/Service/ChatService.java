@@ -1,11 +1,20 @@
 package com.aiproject.aiproject.Service;
 
-import com.aiproject.aiproject.Helper.Helper;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
+import org.springframework.ai.rag.preretrieval.query.expansion.QueryExpander;
+import org.springframework.ai.rag.preretrieval.query.transformation.QueryTransformer;
+import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
+import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
+import org.springframework.ai.rag.retrieval.join.ConcatenationDocumentJoiner;
+import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -51,6 +60,7 @@ public class ChatService {
                 .stream()
                 .content();
     }
+
     public void saveData(List<String> list) {
 
         List<Document> finalDocs = new ArrayList<>();
@@ -79,4 +89,63 @@ public class ChatService {
         System.out.println("Chunks created: " + finalDocs.size());
 
         vectorStore.add(finalDocs);
-    }}
+    }
+
+    public String processchat4(String query) {
+
+        QueryTransformer queryTransformer = RewriteQueryTransformer.builder()
+                .chatClientBuilder(OllamaChatClient.mutate().clone()).build();
+
+//        QueryTransformer queryTransformer = RewriteQueryTransformer.builder()          this and above one we can use basicalyy we need chatClientBuilder which call LLM and this is the type of builder when we do builder.build() it internally gives us chatclientbuilder
+//                .chatClientBuilder(ChatClient.builder(chatModel)).build();
+
+        QueryTransformer queryTransformer2 = TranslationQueryTransformer.builder()
+                .chatClientBuilder(OllamaChatClient.mutate().clone())
+                .targetLanguage("english")
+                .build();
+
+
+        DocumentRetriever documentRetriever = VectorStoreDocumentRetriever.builder()
+                .vectorStore(vectorStore)
+                .similarityThreshold(0.73)
+                .topK(5)
+                .build();
+
+        QueryExpander queryExpander = MultiQueryExpander.builder()
+                .chatClientBuilder(OllamaChatClient.mutate().clone())
+                .build();
+
+        var advisor = RetrievalAugmentationAdvisor.builder()
+                .queryTransformers(queryTransformer, queryTransformer2)
+                .queryExpander(queryExpander)
+                .documentRetriever(documentRetriever)
+                .documentJoiner(new ConcatenationDocumentJoiner())
+                .build();
+
+
+        var response = OllamaChatClient
+                .prompt("Do not answer from your own knowledge.")
+                .advisors(advisor)
+                .system("""
+                        You are a course recommendation assistant.
+                        
+                        Your job is to recommend courses ONLY from the provided context.
+                        
+                        Rules:
+                        1. Do NOT give general advice.
+                        2. Do NOT mention external resources like YouTube or blogs.
+                        3. ONLY return courses from the context.
+                        4. If no course is found, say: "No relevant course found."
+                        
+                        Format:
+                        Course Name:
+                        Instructor:
+                        Description:
+                        """)
+                .user("Convert this Query into a Course finding query"+query)
+                .call()
+                .content();
+        return response;
+
+    }
+}

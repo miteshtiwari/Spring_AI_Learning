@@ -1,6 +1,7 @@
 package com.aiproject.aiproject;
 
-import com.aiproject.aiproject.Helper.Helper;
+import com.aiproject.aiproject.Helper.CourseDataLoader;
+//import com.aiproject.aiproject.Helper.Helper;
 import com.aiproject.aiproject.Service.ChatService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,9 @@ class AiprojectApplicationTests {
 	@Autowired
 	private ChatService chatService;
 
+	@Autowired
+	private CourseDataLoader courseDataLoader;
+
 
 	@Test
 	void testprompttemplate(){
@@ -20,7 +24,7 @@ class AiprojectApplicationTests {
 	@Test
 	void savedatattomariadb(){
 		System.out.println("saving data to db");
-		this.chatService.saveData(new Helper().getdata());
+		courseDataLoader.saveDataInDb();
 		System.out.println("data saved succesfully");
 
 	}

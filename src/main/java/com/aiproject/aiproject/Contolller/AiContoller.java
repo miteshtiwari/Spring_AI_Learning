@@ -7,6 +7,7 @@ import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.ai.ollama.OllamaChatModel;
 import reactor.core.publisher.Flux;
 
 import java.lang.annotation.Documented;
@@ -143,6 +145,15 @@ public class AiContoller {
 
         return ResponseEntity.ok("Response from AI :- " + response);
     }
+
+    @GetMapping("/chatnew")
+    private ResponseEntity<String> chat4(@RequestParam(value = "q") String query) {
+
+
+        OllamaChatModel OllamaChatModel;
+        return ResponseEntity.ok(chatService.processchat4(query));
+    }
+
 
 
 //    @GetMapping("/chat-class")
