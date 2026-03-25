@@ -5,7 +5,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.ollama.OllamaChatModel;
+//import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.preretrieval.query.expansion.MultiQueryExpander;
 import org.springframework.ai.rag.preretrieval.query.expansion.QueryExpander;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class ChatService {
 
     @Autowired
-    private ChatClient OllamaChatClient;
+    private ChatClient OpenAiChatClient;
     @Autowired
     private ChatMemory chatMemory;
 
@@ -43,22 +43,12 @@ public class ChatService {
     public Flux<String> streamchat(String query, String convoid) {
 
         String CONVERSATION_ID = convoid;
-        return OllamaChatClient
-                .prompt()
-                .advisors(
-                        MessageChatMemoryAdvisor.builder(chatMemory)
-                                .conversationId(CONVERSATION_ID)
-                                .build()
-                )
-                .system("""
-                        You are a concise assistant.l̥
-                        - No examples unless asked
-                        - No extra explanation given
-                        - No repetition
-                        """)
-                .user(query)
-                .stream()
-                .content();
+        return OpenAiChatClient.prompt().advisors(MessageChatMemoryAdvisor.builder(chatMemory).conversationId(CONVERSATION_ID).build()).system("""
+                You are a concise assistant.l̥
+                - No examples unless asked
+                - No extra explanation given
+                - No repetition
+                """).user(query).stream().content();
     }
 
     public void saveData(List<String> list) {
@@ -93,58 +83,43 @@ public class ChatService {
 
     public String processchat4(String query) {
 
-        QueryTransformer queryTransformer = RewriteQueryTransformer.builder()
-                .chatClientBuilder(OllamaChatClient.mutate().clone()).build();
+        QueryTransformer queryTransformer = RewriteQueryTransformer.builder().chatClientBuilder(OpenAiChatClient.mutate().clone()).build();
 
 //        QueryTransformer queryTransformer = RewriteQueryTransformer.builder()          this and above one we can use basicalyy we need chatClientBuilder which call LLM and this is the type of builder when we do builder.build() it internally gives us chatclientbuilder
 //                .chatClientBuilder(ChatClient.builder(chatModel)).build();
 
-        QueryTransformer queryTransformer2 = TranslationQueryTransformer.builder()
-                .chatClientBuilder(OllamaChatClient.mutate().clone())
-                .targetLanguage("english")
-                .build();
+        QueryTransformer queryTransformer2 = TranslationQueryTransformer.builder().chatClientBuilder(OpenAiChatClient.mutate().clone()).targetLanguage("english").build();
 
 
-        DocumentRetriever documentRetriever = VectorStoreDocumentRetriever.builder()
-                .vectorStore(vectorStore)
-                .similarityThreshold(0.73)
-                .topK(5)
-                .build();
+        DocumentRetriever documentRetriever = VectorStoreDocumentRetriever.builder().vectorStore(vectorStore).similarityThreshold(0.5).topK(5).build();
 
-        QueryExpander queryExpander = MultiQueryExpander.builder()
-                .chatClientBuilder(OllamaChatClient.mutate().clone())
-                .build();
+        QueryExpander queryExpander = MultiQueryExpander.builder().chatClientBuilder(OpenAiChatClient.mutate().clone()).build();
 
         var advisor = RetrievalAugmentationAdvisor.builder()
-                .queryTransformers(queryTransformer, queryTransformer2)
-                .queryExpander(queryExpander)
+//                .queryTransformers(queryTransformer, queryTransformer2)
+//                .queryExpander(queryExpander)
                 .documentRetriever(documentRetriever)
                 .documentJoiner(new ConcatenationDocumentJoiner())
                 .build();
 
 
-        var response = OllamaChatClient
-                .prompt("Do not answer from your own knowledge.")
-                .advisors(advisor)
+        var response = OpenAiChatClient.prompt("Do not answer from your own knowledge.").advisors(advisor)
                 .system("""
                         You are a course recommendation assistant.
                         
-                        Your job is to recommend courses ONLY from the provided context.
+                        Select matching lines from the context.
                         
                         Rules:
-                        1. Do NOT give general advice.
-                        2. Do NOT mention external resources like YouTube or blogs.
-                        3. ONLY return courses from the context.
-                        4. If no course is found, say: "No relevant course found."
+                        1. Return exact lines from context.
+                        2. Do NOT change wording.
+                        3. If multiple matches, return all.
+                        4. If no match, say: "No relevant course found."
                         
                         Format:
-                        Course Name:
-                        Instructor:
-                        Description:
-                        """)
-                .user("Convert this Query into a Course finding query"+query)
-                .call()
-                .content();
+                        Course: <first few words of the line>
+                        Details: <full line>
+                        instructor :<full line>
+                        """).user(query).call().content();
         return response;
 
     }

@@ -7,7 +7,7 @@ import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.ollama.OllamaChatModel;
+//import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.ai.ollama.OllamaChatModel;
+//import org.springframework.ai.ollama.OllamaChatModel;
 import reactor.core.publisher.Flux;
 
 import java.lang.annotation.Documented;
@@ -34,13 +34,12 @@ public class AiContoller {
     @Autowired
     private VectorStore vectorStore;
 
-//
-//    private ChatClient OpenAiChatClient;
+    private final ChatClient OpenAiChatClient;
 
-    private ChatClient OllamaChatClient;
+//    private ChatClient OllamaChatClient;
 
-    public AiContoller(@Qualifier("OllamaChatClient") ChatClient ollamaChatClient) {
-        this.OllamaChatClient = ollamaChatClient;
+    public AiContoller(@Qualifier("OpenAiChatClient") ChatClient OpenAiChatClient) {
+        this.OpenAiChatClient = OpenAiChatClient;
     }
 
 
@@ -136,7 +135,7 @@ public class AiContoller {
 
         String systemPrompt = buildSystemPrompt(contextdata);
 
-        var response = OllamaChatClient
+        var response = OpenAiChatClient
                 .prompt()
                 .system(systemPrompt)   // ✅ context + rules
                 .user("Answer this question strictly from the documents: " + query)        // ✅ user question
@@ -150,7 +149,7 @@ public class AiContoller {
     private ResponseEntity<String> chat4(@RequestParam(value = "q") String query) {
 
 
-        OllamaChatModel OllamaChatModel;
+//        OpenAiChatClient OpenAiChatClient;
         return ResponseEntity.ok(chatService.processchat4(query));
     }
 
