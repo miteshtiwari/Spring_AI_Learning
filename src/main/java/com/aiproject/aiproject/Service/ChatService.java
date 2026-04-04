@@ -103,7 +103,7 @@ public class ChatService {
                 .build();
 
 
-        var response = OpenAiChatClient.prompt("Do not answer from your own knowledge.").advisors(advisor)
+        var response = OpenAiChatClient.prompt("Do not answer from your own knowledge please.").advisors(advisor)
                 .system("""
                         You are a course recommendation assistant.
                         
