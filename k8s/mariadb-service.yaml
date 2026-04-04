@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-service          # Spring Boot connects using this name
+  # jdbc:mariadb://THIS_NAME:3306/springai
+spec:
+  selector:
+    app: mariadb         # must match mariadb Deployment label
+  ports:
+    - port: 3306      # MariaDB port
+      targetPort: 3306
+
+
+

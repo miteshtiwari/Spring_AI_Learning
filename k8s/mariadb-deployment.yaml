@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:11
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: spring-ai-secrets
+                  key: db-password
+            - name: MARIADB_DATABASE
+              value: springai
+          volumeMounts:
+            - name: mariadb-pvc
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mariadb-pvc
+          persistentVolumeClaim:
+            claimName: mariadb-pvc # must match the name in mariadb-pvc.yaml
+

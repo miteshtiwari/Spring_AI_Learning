@@ -1,6 +1,7 @@
 package com.aiproject.aiproject.Contolller;
 
 import com.aiproject.aiproject.Entity.Tut;
+import com.aiproject.aiproject.Helper.CourseDataLoader;
 import com.aiproject.aiproject.Service.ChatService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
@@ -33,6 +34,9 @@ public class AiContoller {
 
     @Autowired
     private VectorStore vectorStore;
+
+    @Autowired
+    private CourseDataLoader courseDataLoader;
 
     private final ChatClient OpenAiChatClient;
 
@@ -186,6 +190,12 @@ public class AiContoller {
 //
 //        return build;
 //    }
+    @GetMapping("/load-data")
+    public ResponseEntity<String> loadData() {
+        courseDataLoader.saveDataInDb();
+        return ResponseEntity.ok("Data loaded successfully!");
+    }
+
     @GetMapping("/stream-chat")
     public ResponseEntity<Flux<String>> streamchat(@RequestParam("q") String query, @RequestHeader("conversation-id") String convoid) {
 

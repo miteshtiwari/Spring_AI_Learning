@@ -1,0 +1,49 @@
+#! mariadb-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: mariadb
+    namespace: aiproject
+    labels:
+        com.docker.compose.project: aiproject
+        com.docker.compose.service: mariadb
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: aiproject
+            com.docker.compose.service: mariadb
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: aiproject
+                com.docker.compose.service: mariadb
+                com.docker.compose.network.default: "true"
+        spec:
+            containers:
+                - name: mariadb
+                  image: mariadb:11
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: MARIADB_DATABASE
+                      value: "springai"
+                    - name: MARIADB_ROOT_PASSWORD
+                      value: "root1234"
+                  livenessProbe:
+                    exec:
+                        command: [healthcheck.sh --connect --innodb_initialized]
+                    periodSeconds: 10
+                    failureThreshold: 5
+                  ports:
+                    - name: mariadb-3306
+                      containerPort: 3306
+                  volumeMounts:
+                    - name: var-lib-mysql
+                      mountPath: /var/lib/mysql
+            volumes:
+                - name: var-lib-mysql
+                  persistentVolumeClaim:
+                    claimName: mariadb-mariadb-data

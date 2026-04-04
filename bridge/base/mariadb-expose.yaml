@@ -1,0 +1,18 @@
+#! mariadb-expose.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Service
+metadata:
+    name: mariadb
+    namespace: aiproject
+    labels:
+        com.docker.compose.project: aiproject
+        com.docker.compose.service: mariadb
+spec:
+    selector:
+        com.docker.compose.project: aiproject
+        com.docker.compose.service: mariadb
+    ports:
+        - name: mariadb-3306
+          port: 3306
+          targetPort: mariadb-3306
